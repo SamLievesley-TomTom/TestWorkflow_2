@@ -108,9 +108,9 @@ jobs:
           print(f"tag = {tag}")
           github_token = os.environ['github_token']
           bearer_auth = tt.HTTPBearerAuth(github_token)
-          if tt.check_tag_exists(repo = repo, tag_pattern = r'alpha-v\d+\.\d+\.\d+\(\d+\)', commit_sha = commit_hash, auth = bearer_auth):
-            print(f"Alpha build {tag} was already created at commit: {commit_hash}")
+          existing_tag = tt.find_tag(repo = repo, tag_pattern = r'alpha-v\d+\.\d+\.\d+\(\d+\)', commit_sha = commit_hash, auth = bearer_auth)
+          if existing_tag:
+            print(f"Alpha build {existing_tag} was already created at commit: {commit_hash}")
             sys.exit(1)
           tt.push_tag(repo = repo, tag = tag, commit_sha = commit_hash, auth = bearer_auth)
         shell: python3 {0}
-

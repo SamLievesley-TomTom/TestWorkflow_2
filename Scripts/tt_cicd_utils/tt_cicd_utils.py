@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 
-__all__ = ['HTTPBearerAuth', 'PullRequestState', 'SemanticVersion', 'add_labels_to_pull_request', 'get_latest_version_tag', 'get_last_commit_sha', 'check_tag_exists', 'push_tag', 'fetch_latest_pull_request']
+__all__ = ['HTTPBearerAuth', 'PullRequestState', 'SemanticVersion', 'add_labels_to_pull_request', 'get_latest_version_tag', 'get_last_commit_sha', 'find_tag', 'push_tag', 'fetch_latest_pull_request']
 
 github_headers = {
     "Accept": "application/vnd.github+json",
@@ -81,7 +81,7 @@ def get_last_commit_sha(branch: str) -> str:
     sha = result.stdout.strip()
     return sha
 
-def check_tag_exists(repo: str, tag_pattern: str, commit_sha: str, auth: requests.auth.AuthBase) -> bool:
+def find_tag(repo: str, tag_pattern: str, commit_sha: str, auth: requests.auth.AuthBase) -> str:
     url = f'https://api.github.com/repos/{repo}/tags'
     response = requests.get(url, headers = github_headers, auth = auth)
     response.raise_for_status()
@@ -89,8 +89,8 @@ def check_tag_exists(repo: str, tag_pattern: str, commit_sha: str, auth: request
     tags = response.json()
     for tag in tags:
         if tag['commit']['sha'] == commit_sha and tag_regex.match(tag['name']):
-            return True
-    return False
+            return tag['name']
+    return None
 
 def push_tag(repo: str, tag: str, commit_sha: str, auth: requests.auth.AuthBase):
     url = f"https://api.github.com/repos/{repo}/git/refs"
