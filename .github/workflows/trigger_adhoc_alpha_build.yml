@@ -118,7 +118,7 @@ jobs:
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ env.github_token }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/repos/SamLievesley-TomTom/TestWorkflow/dispatches \
+          https://api.github.com/repos/${{ env.repo }}/dispatches \
           -d '{"event_type":"create-alpha-build","client_payload":{"commit_hash":"${{ env.commit_hash }}","version":"${{ env.version }}"}}'
 
       - name: Cleanup
