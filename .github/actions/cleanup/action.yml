@@ -1,0 +1,10 @@
+name: Cleanup
+description: "Cleans the hosted runner"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Delete ~/.netrc
+      shell: bash
+      run: |
+        rm -f ~/.netrc

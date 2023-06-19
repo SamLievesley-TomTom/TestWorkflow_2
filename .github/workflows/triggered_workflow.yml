@@ -1,0 +1,116 @@
+name: Reusable workflow example
+
+on:
+  repository_dispatch:
+    types:
+      - create-alpha-build
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build:
+    env:
+      repo: ${{ github.repository }}
+      github_token: ${{ secrets.GITHUB_TOKEN_FOR_TAGS }}
+    runs-on: macos-12
+
+    steps:
+      - name: Parse Payload
+        id: parse_payload
+        run: |
+          import os
+          import json
+
+          def parse_payload():
+            event_path = os.getenv('GITHUB_EVENT_PATH')
+            if not event_path:
+              return
+            with open(event_path, 'r') as event_file:
+              event_data = json.load(event_file)
+            if 'client_payload' not in event_data:
+              print(json.dumps(event_data, indent = 2))
+              return
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as github_output_file:
+              commit_hash = event_data['client_payload'].get('commit_hash')
+              print(f"commit_hash={commit_hash}", file = github_output_file)
+              print(f"commit_hash={commit_hash}")
+
+              version = event_data['client_payload'].get('version')
+              print(f"version={version}", file = github_output_file)
+              print(f"version={version}")
+
+          parse_payload()
+        shell: python3 {0}
+
+      - name: Checkout code
+        env:
+          commit_hash: ${{ steps.parse_payload.outputs.commit_hash }}
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ env.commit_hash }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: '.python-version'
+          cache: 'pip'
+
+      - name: Setup environment
+        run: |
+          Scripts/setenv.sh
+
+      - name: Set PYTHONPATH
+        run: |
+          echo "PYTHONPATH=${{ github.workspace }}/Scripts/tt_cicd_utils" >> ${GITHUB_ENV}
+
+      - name: Version
+        id: version
+        env:
+          version: ${{ steps.parse_payload.outputs.version }}
+        run: |
+          import os
+          import json
+
+          def set_version():
+            version = os.getenv('version')
+            if not version:
+              version = os.getenv('GITHUB_REF').replace('refs/tags/', '')
+            version = version.lstrip('v')
+
+            # Output the version
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as github_output_file:
+              print(f"version={version}", file = github_output_file)
+              print(f"version={version}")
+
+          set_version()
+        shell: python3 {0}
+
+      - name: Tag commit hash
+        env:
+          commit_hash: ${{ steps.parse_payload.outputs.commit_hash }}
+          version: ${{ steps.version.outputs.version }}
+          build_number: ${{ github.run_number }}
+        if: ${{ env.commit_hash }}
+        run: |
+          import os
+          import sys
+          import tt_cicd_utils as tt
+
+          repo = os.environ['repo']
+          print(f"repo = {repo}")
+          commit_hash = os.environ['commit_hash']
+          print(f"commit_hash = {commit_hash}")
+          version = os.environ['version']
+          build_number = os.environ['build_number']
+          tag = f"alpha-v{version}({build_number})"
+          print(f"tag = {tag}")
+          github_token = os.environ['github_token']
+          bearer_auth = tt.HTTPBearerAuth(github_token)
+          if tt.check_tag_exists(repo = repo, tag_pattern = r'alpha-v\d+\.\d+\.\d+\(\d+\)', commit_sha = commit_hash, auth = bearer_auth):
+            print(f"Alpha build {tag} was already created at commit: {commit_hash}")
+            sys.exit(1)
+          tt.push_tag(repo = repo, tag = tag, commit_sha = commit_hash, auth = bearer_auth)
+        shell: python3 {0}
+
