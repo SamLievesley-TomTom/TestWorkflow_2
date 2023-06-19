@@ -12,7 +12,7 @@ jobs:
   build:
     env:
       repo: ${{ github.repository }}
-      github_token: ${{ secrets.GITHUB_TOKEN_FOR_TAGS }}
+      github_token: ${{ secrets.GH_TOKEN_FOR_TAGS }}
     runs-on: macos-12
 
     steps:
