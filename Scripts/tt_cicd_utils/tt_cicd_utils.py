@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 
-__all__ = ['HTTPBearerAuth', 'PullRequestState', 'SemanticVersion', 'add_labels_to_pull_request', 'get_latest_version_tag', 'get_last_commit_sha', 'find_tag', 'push_tag', 'fetch_latest_pull_request']
+__all__ = ['HTTPBearerAuth', 'PullRequestState', 'SemanticVersion', 'add_labels_to_pull_request', 'get_latest_version_tag', 'get_last_commit_sha', 'push_tag', 'fetch_latest_pull_request']
 
 github_headers = {
     "Accept": "application/vnd.github+json",
